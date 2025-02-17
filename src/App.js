@@ -3,6 +3,7 @@ import './App.css';
 import FetchMoviesList from './FetchMoviesList';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AddMovie from './AddMovie';
+import { PostsList } from './FetchPosts';
 
 
 
@@ -14,6 +15,8 @@ function App() {
       <Routes>
   <Route path="list" element={<FetchMoviesList />} />
   <Route path="add" element={<AddMovie />} />
+  <Route path="posts" element={<PostsList />} />
+
 </Routes>
 
       </div>
