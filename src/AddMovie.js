@@ -1,62 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-function AddMovie({ onMovieAdded }) {
+
+
+const fetchMovies = async () => {
+    const { data } = await axios.get("http://localhost:5000/movies");
+    return data.map(movie => {
+        return { id: Number(movie.id), title: movie.title, year: movie.year };
+    });
+};
+
+export function AddMovie() {
     const [title, setTitle] = useState("");  
     const [year, setYear] = useState("");    
     const [message, setMessage] = useState(""); 
-    const [lastMovieId, setLastMovieId] = useState(0); // Store last used ID
+    
+    // Fetch movies from the server
+    const { data: movies, isLoading, error } = useQuery({
+        queryKey: ['movies'],
+        queryFn: fetchMovies,
+        staleTime: 5000,
+    });
 
-    useEffect(() => {
-        const fetchLastMovieId = async () => {
-            try {
-                const response = await axios.get("http://localhost:5000/movies");
-                console.log("Response data:", response.data); // Debugging
-                
-                if (response.data && response.data.length > 0) {
-                    // Ensure IDs are numbers
-                    const ids = response.data.map(movie => {
-                        const id = Number(movie.id);
-                        return isNaN(id) ? 0 : id;  // If parsing fails, use 0
-                    });
-                    console.log("Parsed IDs:", ids); // Debugging
-                    const highestId = Math.max(...ids);
-                    setLastMovieId(highestId);
-                } else {
-                    setLastMovieId(0); 
-                }
-            } catch (error) {
-                console.error("Error fetching movies:", error);
-            }
-        };
-    
-        fetchLastMovieId();  
-    }, []);
-    
+    // React Query: Mutation to add a new movie
+    const queryClient = useQueryClient();
+    const mutation = useMutation({
+        mutationFn: async (newMovie) => {
+            return axios.post("http://localhost:5000/movies", newMovie);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['movies']); // Refresh movie list
+            setMessage("The Movie Was Added Successfully!");
+            setTitle("");  // Clear form
+            setYear("");  
+        },
+        onError: () => {
+            setMessage("Error adding movie. Try again.");
+        }
+    });
+
+    // Get the last used ID safely, ensuring fallback value of 0
+    let lastMovieId = 0;
+    if (movies && movies.length > 0) {
+        let movieIds = movies.map(movie => Number(movie.id));
+        lastMovieId = Math.max(...movieIds);
+    }
+
     function addMovie() {
-        // If fields are empty, show a message
         if (!title || !year) {
-            setMessage("⚠ Please fill in all fields girl");
+            setMessage("⚠ Please fill in all fields.");
         } else {
-            const newMovieId = lastMovieId + 1; // Next ID
-
-            axios.post("http://localhost:5000/movies", { id: newMovieId, title, year })
-                .then(() => {
-                    setMessage(`🎬 Movie added successfully with ID ${newMovieId}!`);
-                    setTitle(""); // Clears the title input field
-                    setYear("");  // Clears the year input field
-                    setLastMovieId(newMovieId); // Update last movie ID
-
-                    // Refresh the movie list if onMovieAdded is provided
-                    if (onMovieAdded) {
-                        onMovieAdded();
-                    }
-                })
-                .catch(() => {
-                    setMessage("❌ Error adding movie. Try again miss girl");
-                });
+            const newMovieId = lastMovieId + 1; // Generate next ID
+            mutation.mutate({ id: newMovieId, title: title, year: year });
         }
     }
+
+    if (isLoading) return <p>Loading movies...</p>;
+    if (error) return <p>Error loading movies.</p>;
 
     return (
         <div>

@@ -1,17 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // ✅ Import React Query
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"; // ✅ Import DevTools
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-const queryClient = new QueryClient(); // ✅ Create a QueryClient instance
+const queryClient = new QueryClient(); // Create a QueryClient instance
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>  {/* ✅ Wrap App in QueryClientProvider */}
+    <QueryClientProvider client={queryClient}>  {/*  Wrap App in QueryClientProvider */}
       <App />
+      
+      {/* ✅ Add React Query DevTools here */}
+      <ReactQueryDevtools initialIsOpen={false} />  
+
     </QueryClientProvider>
   </React.StrictMode>
 );

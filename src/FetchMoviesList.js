@@ -1,6 +1,13 @@
-import { useState, useEffect } from "react";
 import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 
+// Function to Fetch Movies
+const FetchMovies = async () => {
+    const { data } = await axios.get("http://localhost:5000/movies");
+    return data;
+};
+
+// Component for a Single Movie
 const MovieItem = ({ movieData }) => {
     return (
         <div 
@@ -12,7 +19,8 @@ const MovieItem = ({ movieData }) => {
                 borderRadius: "10px",
                 width: "250px",
                 backgroundColor: "#f9f9f9",
-                boxShadow: "2px 2px 10px rgba(0, 0, 0, 0.1)"
+                boxShadow: "2px 2px 10px rgba(0, 0, 0, 0.1)",
+                transition: "transform 0.3s ease-in-out"
             }}
         >
             <h3 style={{ fontWeight: "bold" }}>{movieData.title}</h3>
@@ -31,44 +39,28 @@ const MovieItem = ({ movieData }) => {
     );
 };
 
-// Fetch Movies and Display them in a row
-function FetchMoviesList() {
-    const [movieList, setMovieList] = useState([]); 
-    const [isLoading, setIsLoading] = useState(true); 
-    const [error, setError] = useState(null); 
+export function FetchMoviesList() {
+    const { data: movies, error, isLoading } = useQuery({
+        queryKey: ["movies"], 
+        queryFn: FetchMovies, 
+        staleTime: 5000, 
+    });
 
-    useEffect(() => {
-        const fetchMovies = async () => {
-            setIsLoading(true);  
-
-            try {
-                const response = await axios.get("http://localhost:5000/movies");
-                setMovieList(response.data);  
-
-            } catch (error) {
-                setError("Something went wrong"); 
-            }
-
-            setIsLoading(false);
-        };
-        fetchMovies();
-    }, []);
-
-    if (isLoading) return <p>Loading data...</p>;  
-    if (error) return <p style={{ color: "red" }}>Error: {error}</p>;  
+    if (isLoading) return <p>Loading data...</p>;
+    if (error) return <p style={{ color: "red" }}>Error: {error.message}</p>; 
 
     return (
         <div style={{ textAlign: "center", marginTop: "20px" }}>
-            <h2 style={{ fontSize: "24px", color: "grey" }}>Movies List</h2>
+            <h2 style={{ fontSize: "24px", color: "grey" }}>kareens Movies List</h2>
             <div style={{
-                display: "flex", 
-                justifyContent: "center", 
-                gap: "20px", 
-                flexWrap: "wrap",  
+                display: "flex",
+                justifyContent: "center",
+                gap: "20px",
+                flexWrap: "wrap",
                 padding: "10px"
             }}>
-                {movieList.map((movie) => (
-                    <MovieItem key={movie.id} movieData={movie} /> 
+                {movies.map((movie) => (
+                    <MovieItem key={movie.id} movieData={movie} />
                 ))}
             </div>
         </div>
